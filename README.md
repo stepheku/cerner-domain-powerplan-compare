@@ -1,0 +1,2 @@
+# Cerner-cross-domain-powerplan-compare
+This project uses a combianation of pandas and deepdiff to compare/contrast PowerPlan-specific CCL query output that's run between different Cerner domains of a client site to spot any differences between domains
