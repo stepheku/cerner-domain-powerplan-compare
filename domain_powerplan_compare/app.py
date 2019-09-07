@@ -37,13 +37,14 @@ if not output_file:
 
 # if __name__ == "__main__":
 args = parse_arguments()
-if df_utils.is_df_cols_matching(args.spreadsheet_1, args.spreadsheet_2):
-    cols = df_utils.get_col_names(args.spreadsheet_1)
-# idx_cols = prompt_column_nums(cols)
-idx_cols = [0, 2, 9, 12]
 df1 = df_utils.read_spreadsheet(args.spreadsheet_1)
 df2 = df_utils.read_spreadsheet(args.spreadsheet_2)
-
+if list(df1.columns) == list(df2.columns):
+    cols = list(df1.columns)
+# idx_cols = prompt_column_nums(cols)
+idx_cols = [0, 2, 9, 12]
+df1.set_index(keys=[df1.columns[x] for x in idx_cols])
+df2.set_index(keys=[df2.columns[x] for x in idx_cols])
 # TODO:
 # Catch PowerPlans that don't exist between domains (removed or added to dictionary)
 # detect any name changes
