@@ -1,4 +1,3 @@
-import argparse
 import pandas as pd
 import re
 import ast
@@ -6,37 +5,14 @@ from deepdiff import DeepDiff
 import domain_powerplan_compare.utils.df_diff_transform as df_diff_transform
 import domain_powerplan_compare.utils.df_utils as df_utils
 import domain_powerplan_compare.utils.add_del_rename as add_del_rename
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Process a spreadsheet file')
-    parser.add_argument('spreadsheet_1', type=str,
-                        help='Path to the first (before) spreadsheet file')
-    parser.add_argument('spreadsheet_2', type=str,
-                        help='Path to the second (after) spreadsheet file')
-    return parser.parse_args()
-
-
-def prompt_column_nums(cols: list, num_of_cols: int = 3) -> list:
-    output = ''
-    for idx, val in enumerate(cols):
-        #print('{}. {}'.format(idx, val))
-        if idx % num_of_cols == (num_of_cols - 1):
-            output += '{}. {}\n'.format(idx, val)
-        else:
-            output += '{}. {}\t\t'.format(idx, val).expandtabs(10)
-    print(output)
-    idx_cols_str = input(
-        'Select column numbers for the index (separated by a comma): ')
-    return [int(x) for x in idx_cols_str.split(',')]
-
+import domain_powerplan_compare.utils.cli_utils as cli_utils
 
 output_file = input('Output file name (CSV format): ')
 if not output_file:
     output_file = 'output.csv'
 
 # if __name__ == "__main__":
-args = parse_arguments()
+args = cli_utils.parse_arguments()
 df1 = df_utils.read_spreadsheet(args.spreadsheet_1)
 df2 = df_utils.read_spreadsheet(args.spreadsheet_2)
 if list(df1.columns) == list(df2.columns):
