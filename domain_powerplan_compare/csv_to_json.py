@@ -44,9 +44,13 @@ def create_os_details_dict(os_file: str, comp_file: str) -> dict:
         reader = csv.DictReader(f, fieldnames=os_field_names)
         next(reader)
         for row in reader:
-            order_sent_id = int(float(row['ORDER_SENTENCE_ID']))
-            oe_field = row['ORDER_ENTRY_FIELD']
-            oe_field_display_value = row['OE_FIELD_DISPLAY_VALUE']
+            if row['ORDER_SENTENCE_ID'] != '':
+                order_sent_id = int(float(row['ORDER_SENTENCE_ID']))
+                oe_field = row['ORDER_ENTRY_FIELD']
+                oe_field_display_value = row['OE_FIELD_DISPLAY_VALUE']
+                
+            else:
+                continue
 
             if order_sent_id not in details_dict.keys():
                 details_dict[order_sent_id] = {}
@@ -85,8 +89,12 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
                                           comp_file=order_comment_file)
     field_names = [
         'POWERPLAN_DESCRIPTION', 'PHASE', 'PLAN_DISPLAY_METHOD',
-        'PHASE_DISPLAY_METHOD', 'SEQUENCE', 'DCP_CLIN_CAT', 'DCP_CLIN_SUB_CAT',
-        'SYNONYM', 'ORDER_SENTENCE_SEQ', 'UPDT_CNT', 'ORDER_SENTENCE_ID',
+        'PHASE_DISPLAY_METHOD', 'SEQUENCE', 'DCP_CLIN_CAT',
+        'DCP_CLIN_SUB_CAT', 'BGCOLOR_RED', 'BGCOLOR_GREEN',
+        'BGCOLOR_BLUE', 'COMPONENT', 'TARGET_DURATION',
+        'START_OFFSET', 'LINK_DURATION_TO_PHASE', 'REQUIRED_IND',
+        'INCLUDE_IND', 'CHEMO_IND', 'CHEMO_RELATED_IND',
+        'PERSISTENT_IND', 'ORDER_SENTENCE_SEQ', 'ORDER_SENTENCE_ID',
         'ORDER_COMMENT'
     ]
 
@@ -105,9 +113,26 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
             dcp_clin_cat = row['DCP_CLIN_CAT']
             dcp_clin_sub_cat = row['DCP_CLIN_SUB_CAT']
             sequence = int(row['SEQUENCE'].strip())
-            synonym = row['SYNONYM']
-            order_sentence_id = int(float(row['ORDER_SENTENCE_ID']))
-            sent_seq = int(row['ORDER_SENTENCE_SEQ'].strip())
+            bgcolor_red = row['BGCOLOR_RED']
+            bgcolor_green = row['BGCOLOR_GREEN']
+            bgcolor_blue = row['BGCOLOR_BLUE']
+            synonym = row['COMPONENT']
+            target_duration = row['TARGET_DURATION']
+            start_offset = row['START_OFFSET']
+            link_duration_to_phase = row['LINK_DURATION_TO_PHASE']
+            required_ind = row['REQUIRED_IND']
+            include_ind = row['INCLUDE_IND']
+            chemo_ind = row['CHEMO_IND']
+            chemo_related_ind = row['CHEMO_RELATED_IND']
+            persistent_ind = row['PERSISTENT_IND']
+            if row['ORDER_SENTENCE_ID'] is not None:
+                order_sentence_id = int(float(row['ORDER_SENTENCE_ID']))
+            else:
+                order_sentence_id = 0
+            if row['ORDER_SENTENCE_SEQ'] is not None:
+                sent_seq = int(row['ORDER_SENTENCE_SEQ'].strip())
+            else: 
+                sent_seq = 0
 
             if powerplan not in output_dict:
                 output_dict[powerplan] = {
@@ -139,6 +164,17 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
                     'dcp_clin_cat': dcp_clin_cat,
                     'dcp_clin_sub_cat': dcp_clin_sub_cat,
                     'sequence': sequence,
+                    'target_duration': target_duration,
+                    'start_offset': start_offset,
+                    'link_duration_to_phase': link_duration_to_phase,
+                    'required_ind': required_ind,
+                    'include_ind': include_ind,
+                    'chemo_ind': chemo_ind,
+                    'chemo_related_ind': chemo_related_ind,
+                    'persistent_ind': persistent_ind,
+                    'bgcolor_red': bgcolor_red,
+                    'bgcolor_green': bgcolor_green,
+                    'bgcolor_blue': bgcolor_blue,
                     'order_sentences': []
                 })
 
@@ -152,7 +188,7 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
 
             order_sentence_details = details_dict.get(order_sentence_id)
 
-            if not sentence_idx and sent_seq > 0:
+            if sentence_idx is None and order_sentence_id > 0:
                 sent_list.append({
                     'sequence': sent_seq,
                     'order_sentence_id': order_sentence_id,
