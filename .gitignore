@@ -1,6 +1,7 @@
 # Excel spreadsheets or CSVs
 *.xls*
 *.csv
+!*data/*.csv
 *.txt
 
 # vs-code

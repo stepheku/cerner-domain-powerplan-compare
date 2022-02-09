@@ -6,7 +6,7 @@ import io
 import os
 import argparse
 
-STRING_ENCODING = 'ISO-8859-1'
+STRING_ENCODING = 'utf-8'
 
 
 def parse_arguments_powerplan_comp_csvs():
@@ -34,20 +34,18 @@ def load_files():
     b0783_component_path = os.path.join(data_path, "ONCP_comp_b0783.csv")
     p0783_component_path = os.path.join(data_path, "ONCP_comp_p0783.csv")
 
+    b0783_order_sentence_path = os.path.join(data_path, 'os_detail_b0783.csv')
     p0783_order_sentence_path = os.path.join(data_path, 'os_detail_p0783.csv')
 
-    b0783_order_sentence_path = os.path.join(data_path, 'os_detail_b0783.csv')
-
-    # p0783_component_path = os.path.join(
-    #     data_path, 'CN_LK_MO_SM_MY_comp_p0783.csv')
-
-    # b0783_component_path = os.path.join(
-    #     data_path, 'CN_LK_MO_SM_MY_comp_b0783.csv')
+    b0783_order_sentence_filter_path = os.path.join(data_path, 'os_filter_b0783.csv')
+    p0783_order_sentence_filter_path = os.path.join(data_path, 'os_filter_p0783.csv')
 
     p0783 = csv_to_json(order_sentence_file=p0783_order_sentence_path,
-                        order_comment_file=p0783_component_path)
+                        order_comment_file=p0783_component_path,
+                        os_filter_file=p0783_order_sentence_filter_path)
     b0783 = csv_to_json(order_sentence_file=b0783_order_sentence_path,
-                        order_comment_file=b0783_component_path)
+                        order_comment_file=b0783_component_path,
+                        os_filter_file=b0783_order_sentence_filter_path)
 
     return b0783, p0783
 
@@ -103,13 +101,13 @@ def append_to_output_csv(s: dict):
         val_1
         val_2
     """
-    with open('output.csv', 'a', newline='\n', encoding=STRING_ENCODING) as f:
+    with open('output.csv', 'a', newline='\n') as f:
         headers = ['PowerPlan', 'Phase', 'synonym', 'key', 'val_1', 'val_2']
         writer = csv.DictWriter(f, fieldnames=headers, quoting=csv.QUOTE_ALL)
         writer.writerow(s)
 
 
-if __name__ == '__main__':
+def main():
     comp_properties = ['bgcolor_red', 'bgcolor_green', 'bgcolor_blue']
     b0783, p0783 = load_files()
     initialize_output_file()
@@ -214,20 +212,32 @@ if __name__ == '__main__':
                                     'val_1': p0783_comp_attr,
                                     'val_2': b0783_comp_attr,
                                 })
+                    
+                    if p0783_components[idx_p0783].get('orderable_type_flag') == 8:
+                        p0783_order_sentences = sorted(p0783_components[idx_p0783].get(
+                            'order_sentences'),
+                            key=lambda i: i.get('iv_synonym'))
+                    else:
+                        p0783_order_sentences = sorted(p0783_components[idx_p0783].get(
+                            'order_sentences'),
+                            key=lambda i: i.get('sequence'))
 
-                    p0783_order_sentences = sorted(p0783_components[idx_p0783].get(
-                        'order_sentences'),
-                        key=lambda i: i.get('sequence'))
-
-                    b0783_order_sentences = sorted(b0783_components[idx_b0783].get(
-                        'order_sentences'),
-                        key=lambda i: i.get('sequence'))
+                    if b0783_components[idx_b0783].get('orderable_type_flag') == 8:
+                        b0783_order_sentences = sorted(b0783_components[idx_b0783].get(
+                            'order_sentences'),
+                            key=lambda i: i.get('iv_synonym'))
+                    else:
+                        b0783_order_sentences = sorted(b0783_components[idx_b0783].get(
+                            'order_sentences'),
+                            key=lambda i: i.get('sequence'))
 
                     for idx, os in enumerate(p0783_order_sentences):
                         if os.get('order_sentence_details') is None:
                             continue
                         for key, val in os.get('order_sentence_details').items():
                             try:
+                                if key in ["Difference in Minutes", "Patient's Own Meds", "Adhoc Frequency Instance"]:
+                                    continue
                                 if b0783_order_sentences[idx].get(
                                     'order_sentence_details', {}) is None:
                                     b0783_val = ""
@@ -265,37 +275,65 @@ if __name__ == '__main__':
                                         'val_2': '',
                                     })                                
 
-            # for p0783_comp_idx, p0783_component in enumerate(p0783_components):
-            #     p0783_sequence = p0783_component.get('sequence')
-            #     p0783_synonym = p0783_component.get('synonym')
-            #     b0783_comp_idx = find_key_val_idx_in_list(
-            #         b0783_components, 'sequence', p0783_sequence)
-            #     try:
-            #         b0783_component = b0783_components[b0783_comp_idx]
-            #     except TypeError:
-            #         pass
+                    # Look in reverse from b0783 to p0783 to see if there are 
+                    # missing order sentences
+                    for idx, os in enumerate(b0783_order_sentences):
+                        if os.get('order_sentence_details') is None:
+                            continue
+                        else:
+                            try:
+                                p0783_os = p0783_order_sentences[idx]
+                            except IndexError:
+                                append_to_output_csv({
+                                        'PowerPlan': powerplan,
+                                        'Phase': phase,
+                                        'synonym': synonym,
+                                        'key': 'Missing order sentence',
+                                        'val_1': f'order sentence sequence: {os.get("sequence")}',
+                                        'val_2': '',
+                                    })    
+                                continue       
+                        for key, val in os.get('order_sentence_details').items():
+                            try:
+                                if key in ["Difference in Minutes", "Patient's Own Meds", "Adhoc Frequency Instance"]:
+                                    continue
+                                if p0783_order_sentences[idx].get(
+                                    'order_sentence_details', {}) is None:
+                                    p0783_val = ""
+                                else:
+                                    p0783_val = p0783_order_sentences[idx].get(
+                                        'order_sentence_details', {}).get(key)
+                                if isinstance(val, str) and isinstance(p0783_val, str):
+                                    if val.lower() == p0783_val.lower():
+                                        continue
+                                    else:
+                                        append_to_output_csv({
+                                            'PowerPlan': powerplan,
+                                            'Phase': phase,
+                                            'synonym': synonym,
+                                            'key': key,
+                                            'val_1': p0783_val,
+                                            'val_2': val,
+                                        })
+                                elif val != b0783_val:
+                                    append_to_output_csv({
+                                        'PowerPlan': powerplan,
+                                        'Phase': phase,
+                                        'synonym': synonym,
+                                        'key': key,
+                                        'val_1': p0783_val,
+                                        'val_2': val,
+                                    })
+                            except IndexError:
+                                    append_to_output_csv({
+                                        'PowerPlan': powerplan,
+                                        'Phase': phase,
+                                        'synonym': synonym,
+                                        'key': 'Missing order sentence',
+                                        'val_1': '',
+                                        'val_2': '',
+                                    })                                
 
-            #     if b0783_comp_idx is None or p0783_components[p0783_comp_idx].get('synonym') != \
-            #         b0783_component.get('synonym'):
-            #         print('Mismatched component in PowerPlan: {}, phase: {}, component: {}'.format(powerplan, phase, p0783_synonym))
 
-                # else:
-                    # if len(p0783_component.get('order_sentences')):
-                    #     for idx, p0783_order_sentence in enumerate(p0783_component.get('order_sentences')):
-                    #         b0783_order_sentences = b0783_component.get('order_sentences')
-                    #         p0783_order_sentence_seq = p0783_order_sentence.get('sequence')
-                    #         b0783_order_sentence_idx = find_key_val_idx_in_list(b0783_order_sentences, key='sequence', value=p0783_order_sentence_seq)
-                    #         if b0783_order_sentence_idx is None:
-                    #             write_to_output_file('Mismatched order sentence in PowerPlan: {}, phase: {}, component: {}\n'.format(powerplan, phase, p0783_synonym))
-                    #         else:
-                    #             b0783_order_sentence = b0783_order_sentences[b0783_order_sentence_idx]
-                    #             p0783_order_sentence_detail = p0783_order_sentence.get('order_sentence_details')
-                    #             b0783_order_sentence_detail = b0783_order_sentence.get('order_sentence_details')
-                    #             for detail, value in p0783_order_sentence_detail.items():
-                    #                 p0783_detail = detail
-                    #                 p0783_value = value
-                    #                 b0783_value = b0783_order_sentence_detail.get(detail)
-                    #                 if detail not in b0783_order_sentence_detail:
-                    #                     write_to_output_file('Mismatched order sentence detail in PowerPlan: {}, phase: {}, component: {}, detail: {}, value: {}\n'.format(powerplan, phase, p0783_synonym, detail, value))
-                    #                 if value != b0783_order_sentence_detail.get(detail):
-                    #                     write_to_output_file('Mismatched order sentence detail in PowerPlan: {}, phase: {}, component: {}, detail: {}, value: {}, b0783_value: {}\n'.format(powerplan, phase, p0783_synonym, detail, value, b0783_value))
+if __name__ == "__main__":
+    main()

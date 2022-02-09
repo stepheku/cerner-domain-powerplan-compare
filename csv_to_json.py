@@ -5,10 +5,7 @@ import unicodedata
 import os.path
 import csv
 
-STRING_ENCODING = 'ISO-8859-1'
-INVALID_CHARS = [
-    '\xc3\xaf', 'xc2\xbb', '\xc2\xbf'
-]
+STRING_ENCODING = 'utf_8_sig'
 
 
 def find_key_val_idx_in_list(lst, key, value):
@@ -26,7 +23,7 @@ def find_key_val_idx_in_list(lst, key, value):
             return i
 
 
-def create_os_details_dict(os_file: str, comp_file: str) -> dict:
+def create_os_details_dict(os_file: str, comp_file: str, os_filter_file: str=None) -> dict:
     """
     Creates order sentence details dictionary to be embedded in
     another dictionary
@@ -40,7 +37,7 @@ def create_os_details_dict(os_file: str, comp_file: str) -> dict:
     os_field_names = ['ORDER_SENTENCE_ID', 'OE_FIELD_DISPLAY_VALUE',
                       'ORDER_ENTRY_FIELD']
 
-    with open(os_file, 'r', encoding=STRING_ENCODING) as f:
+    with open(os_file, 'r') as f:
         reader = csv.DictReader(f, fieldnames=os_field_names)
         next(reader)
         for row in reader:
@@ -48,7 +45,7 @@ def create_os_details_dict(os_file: str, comp_file: str) -> dict:
                 order_sent_id = int(float(row['ORDER_SENTENCE_ID']))
                 oe_field = row['ORDER_ENTRY_FIELD']
                 oe_field_display_value = row['OE_FIELD_DISPLAY_VALUE']
-                
+
             else:
                 continue
 
@@ -56,8 +53,9 @@ def create_os_details_dict(os_file: str, comp_file: str) -> dict:
                 details_dict[order_sent_id] = {}
 
             details_dict[order_sent_id][oe_field] = oe_field_display_value
+    
 
-    with open(comp_file, 'r', encoding=STRING_ENCODING) as f:
+    with open(comp_file, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row['ORDER_SENTENCE_ID']:
@@ -71,10 +69,30 @@ def create_os_details_dict(os_file: str, comp_file: str) -> dict:
             if order_sentence_id in details_dict:
                 details_dict[order_sentence_id]['order_comments'] = order_comment
 
+
+    if os_filter_file is not None:
+        with open(os_filter_file, 'r') as f:
+            reader = csv.DictReader(f)
+            row = next(reader)
+            os_filter_columns = list(row.keys())
+        
+        with open(os_filter_file, 'r') as f:
+            reader = csv.DictReader(f, fieldnames=os_filter_columns)
+            next(reader)
+            for row in reader:
+                order_sent_id = int(float(row['ORDER_SENTENCE_ID']))
+                if order_sent_id not in details_dict:
+                    continue
+                for k, v in row.items():
+                    if k.endswith("VALUE") and float(v) > 0:
+                        details_dict[order_sent_id][k] = str(float(v.strip()))
+                    elif k.endswith("DISPLAY") and v:
+                        details_dict[order_sent_id][k] = v
+
     return details_dict
 
 
-def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
+def csv_to_json(order_sentence_file: str, order_comment_file: str, os_filter_file: str=None) -> dict:
     """
     Conversion of CSV to dictionary/JSON for sequenced PowerPlans and clinical
     category
@@ -86,19 +104,15 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
     """
     output_dict = collections.defaultdict()
     details_dict = create_os_details_dict(os_file=order_sentence_file,
-                                          comp_file=order_comment_file)
-    field_names = [
-        'POWERPLAN_DESCRIPTION', 'PHASE', 'PLAN_DISPLAY_METHOD',
-        'PHASE_DISPLAY_METHOD', 'SEQUENCE', 'DCP_CLIN_CAT',
-        'DCP_CLIN_SUB_CAT', 'BGCOLOR_RED', 'BGCOLOR_GREEN',
-        'BGCOLOR_BLUE', 'COMPONENT', 'TARGET_DURATION',
-        'START_OFFSET', 'LINK_DURATION_TO_PHASE', 'REQUIRED_IND',
-        'INCLUDE_IND', 'CHEMO_IND', 'CHEMO_RELATED_IND',
-        'PERSISTENT_IND', 'ORDER_SENTENCE_SEQ', 'ORDER_SENTENCE_ID',
-        'ORDER_COMMENT'
-    ]
+                                          comp_file=order_comment_file,
+                                          os_filter_file=os_filter_file)
+    with open(order_comment_file, "r") as f:
+        reader = csv.DictReader(f)
+        row = next(reader)
+        field_names = list(row.keys())
+    
 
-    with open(order_comment_file, 'r', encoding=STRING_ENCODING) as f:
+    with open(order_comment_file, 'r') as f:
         reader = csv.DictReader(f, fieldnames=field_names)
         next(reader)
         for row in reader:
@@ -117,6 +131,8 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
             bgcolor_green = row['BGCOLOR_GREEN']
             bgcolor_blue = row['BGCOLOR_BLUE']
             synonym = row['COMPONENT']
+            iv_synonym = row.get("IV_COMPONENT")
+            orderable_type_flag = int(row.get("ORDERABLE_TYPE_FLAG"))
             target_duration = row['TARGET_DURATION']
             start_offset = row['START_OFFSET']
             link_duration_to_phase = row['LINK_DURATION_TO_PHASE']
@@ -125,13 +141,19 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
             chemo_ind = row['CHEMO_IND']
             chemo_related_ind = row['CHEMO_RELATED_IND']
             persistent_ind = row['PERSISTENT_IND']
+            linking_rule = row.get("LINKING_RULE")
+            linking_rule_quantity = row.get("LINKING_RULE_QUANTITY")
+            linking_rule_flag = row.get("LINKING_RULE_FLAG")
+            linking_override_reason = row.get("LINKING_OVERRIDE_REASON")
+            assigned_dots = row.get("ASSIGNED_DOTS")
+
             if row['ORDER_SENTENCE_ID'] is not None:
                 order_sentence_id = int(float(row['ORDER_SENTENCE_ID']))
             else:
                 order_sentence_id = 0
-            if row['ORDER_SENTENCE_SEQ'] is not None:
+            if row['ORDER_SENTENCE_SEQ'] is not None and row['ORDER_SENTENCE_SEQ']:
                 sent_seq = int(row['ORDER_SENTENCE_SEQ'].strip())
-            else: 
+            else:
                 sent_seq = 0
 
             if powerplan not in output_dict:
@@ -161,6 +183,7 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
             if component_idx is None:
                 comp_dict.append({
                     'synonym': synonym,
+                    'orderable_type_flag': orderable_type_flag,
                     'dcp_clin_cat': dcp_clin_cat,
                     'dcp_clin_sub_cat': dcp_clin_sub_cat,
                     'sequence': sequence,
@@ -172,6 +195,11 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
                     'chemo_ind': chemo_ind,
                     'chemo_related_ind': chemo_related_ind,
                     'persistent_ind': persistent_ind,
+                    'linking_rule': linking_rule,
+                    'linking_rule_quantity': linking_rule_quantity,
+                    'linking_rule_flag': linking_rule_flag,
+                    'linking_override_reason': linking_override_reason,
+                    'assigned_dots': assigned_dots,
                     'bgcolor_red': bgcolor_red,
                     'bgcolor_green': bgcolor_green,
                     'bgcolor_blue': bgcolor_blue,
@@ -182,17 +210,18 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str) -> dict:
 
             sent_list = comp_dict[component_idx].get('order_sentences')
 
-            sentence_idx = find_key_val_idx_in_list(
-                lst=sent_list, key='sequence', value=sent_seq
-            )
+            # sentence_idx = find_key_val_idx_in_list(
+            #     lst=sent_list, key='sequence', value=sent_seq
+            # )
 
             order_sentence_details = details_dict.get(order_sentence_id)
 
-            if sentence_idx is None and order_sentence_id > 0:
+            if order_sentence_id > 0:
                 sent_list.append({
                     'sequence': sent_seq,
                     'order_sentence_id': order_sentence_id,
-                    'order_sentence_details': order_sentence_details
+                    'order_sentence_details': order_sentence_details,
+                    'iv_synonym': iv_synonym
                 })
 
                 sentence_idx = -1
@@ -230,7 +259,9 @@ if __name__ == "__main__":
     """
     script_path = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(script_path, 'data')
-    order_sentence_path = os.path.join(data_path, 'os_detail_b0783.csv')
-    component_path = os.path.join(data_path, 'HN_comp_b0783.csv')
+    order_sentence_path = os.path.join(data_path, 'os_detail_p0783.csv')
+    component_path = os.path.join(data_path, 'ONCP_comp_p0783.csv')
+    order_sentence_filter_path = os.path.join(data_path, 'os_filter_p0783.csv')
     a = csv_to_json(order_sentence_file=order_sentence_path,
-                    order_comment_file=component_path)
+                    order_comment_file=component_path,
+                    os_filter_file=order_sentence_filter_path)

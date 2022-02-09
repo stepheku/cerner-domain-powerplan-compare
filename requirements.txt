@@ -1,6 +1,0 @@
-pandas
-xlrd
-openpyxl
-fuzzywuzzy
-python-Levenshtein
-textdistance
