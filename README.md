@@ -24,3 +24,10 @@ The CSVs are hard coded. Feel free to change it so you can specify the files
 Originally I was thinking to create a giant ccl script that pulls all of the information in. The problem that I kept running into was the hierarchical structure. I couldn't save everything as a 100+ mb json file. and csv outputs have a finite limit of what can be displayed to "mine", without output a file to one of the nodes and having to retrieve it later
 
 So an alternative was to run multiple queries, have python combine them into a giant dictionary and then do the compare that way. This became a little bit more sustainable because it can cover more PowerPlans simultaneously. Using a giant ccl script and have to save the file each time generated meant having to figure out how to break up all of the powerplans
+
+## Caveats
+### Sequenced PowerPlans
+Currently, this only supports sequenced PowerPlans. All other plan types are not supported because their sequencing is fairly different
+
+### PowerPlan/Regimen filtering
+Currently the ccl queries are configured to look for ped onc PowerPlans. Please be sure to make the appropriate changes if looking for different PowerPlans
