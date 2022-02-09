@@ -1,5 +1,0 @@
-pandas
-xlrd
-deepdiff
-openpyxl
-fleep
