@@ -40,7 +40,7 @@ select
     , do_not_allow_proposal_ind = pwcat.restricted_actions_bitmask
     , route_for_review = 
         if(pwcat.route_for_review_ind = 1)
-            if(pwcat.review_required_sig_count = 1) "Route for 1 review"
+            if(pwcat.review_required_sig_count in (0, 1)) "Route for 1 review"
             elseif(pwcat.review_required_sig_count = 2) "Route for 2 reviews"
             else "None"
             endif
