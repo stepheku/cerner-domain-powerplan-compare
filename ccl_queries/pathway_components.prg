@@ -5,9 +5,8 @@ Grabs PowerPlan components based on the parameters specified on the pathway_cata
 table
 This is saved to: ONCP_comp_b0783.csv or ONCP_comp_p0783.csv
 */
-select powerplan_description = if (pwcat.pathway_catalog_id > 0) pwcat.description
-    else pwcat2.description endif
-    , phase = if (pwcat.pathway_catalog_id > 0) pwcat2.description endif
+select powerplan_description = pwcat.description
+    , phase = pwcat2.description
     , plan_display_method = uar_get_code_display(pwcat.display_method_cd)
     , phase_display_method = uar_get_code_display(pwcat2.display_method_cd)
     , pc.sequence
@@ -95,53 +94,32 @@ from pathway_catalog pwcat
             and pwcat4.type_mean = "DOT"
         with sqltype("f8", "vc")) comp_dot )
     , pw_comp_group pcg
-    
-plan pc where pc.active_ind = 1
-    and (
-        exists (
-            select 1
-            from pathway_catalog pwcat 
-                , pw_cat_reltn pcr
-                , pathway_catalog pwcat2
-            where pwcat.active_ind = 1
-                and pwcat.type_mean in ("CAREPLAN", "PATHWAY")
-                and pwcat.description_key like "PED*"
-                and pwcat.version = (
-                    select max(pwcat4.version)
-                    from pathway_catalog pwcat4
-                    where pwcat4.version_pw_cat_id = pwcat.version_pw_cat_id
-                        and pwcat4.active_ind = 1
-                    )
-                and pwcat.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-                and pwcat.pathway_type_cd = value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
-                and pcr.pw_cat_s_id = pwcat.pathway_catalog_id
-                and pcr.type_mean = "GROUP"
-                and pwcat2.pathway_catalog_id = pcr.pw_cat_t_id
-                and pwcat2.pathway_catalog_id = pc.pathway_catalog_id
-        )
-        or exists (
-            select 1
-            from pathway_catalog pwcat 
-            where pwcat.active_ind = 1
-                and pwcat.type_mean in ("CAREPLAN", "PATHWAY")
-                and pwcat.description_key like "PED*"
-                and pwcat.version = (
-                    select max(pwcat4.version)
-                    from pathway_catalog pwcat4
-                    where pwcat4.version_pw_cat_id = pwcat.version_pw_cat_id
-                        and pwcat4.active_ind = 1
-                    )
-                and pwcat.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-                and pwcat.pathway_type_cd = value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
-                and pwcat.pathway_catalog_id = pc.pathway_catalog_id
-        )
+
+plan pwcat where pwcat.active_ind = 1
+    and pwcat.type_mean in ("CAREPLAN", "PATHWAY")
+    and pwcat.description_key like "ONCP*"
+    and pwcat.version = (
+        select max(pwcat4.version)
+        from pathway_catalog pwcat4
+        where pwcat4.version_pw_cat_id = pwcat.version_pw_cat_id
+            and pwcat4.active_ind = 1
+    )
+    and pwcat.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+    and pwcat.pathway_type_cd in (
+        value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
+        , value(uar_get_code_by("DISPLAY_KEY", 30183, "COMPASSIONATEACCESSPROGRAM"))
+        , value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGYMULTIDISCIPLINARY"))
+    )
+join pcr where pcr.pw_cat_s_id = outerjoin(pwcat.pathway_catalog_id)
+    and pcr.type_mean = outerjoin("GROUP")
+join pwcat2 where pwcat2.pathway_catalog_id = outerjoin(pcr.pw_cat_t_id)
+join pc where pc.active_ind = 1
+    and pc.pathway_catalog_id in (
+        pwcat.pathway_catalog_id
+        , pwcat2.pathway_catalog_id
     )
 join comp_dot where comp_dot.pathway_comp_id = outerjoin(pc.pathway_comp_id)
 join pcg where pcg.pathway_comp_id = outerjoin(pc.pathway_comp_id)
-join pwcat2 where pwcat2.pathway_catalog_id = pc.pathway_catalog_id
-join pcr where pcr.pw_cat_t_id = outerjoin(pwcat2.pathway_catalog_id)
-    and pcr.type_mean = outerjoin("GROUP")
-join pwcat where pwcat.pathway_catalog_id = outerjoin(pcr.pw_cat_s_id)
 join lt2 where lt2.long_text_id = outerjoin(pc.parent_entity_id)
     and lt2.active_ind = outerjoin(1)
 join oc where oc.outcome_catalog_id = outerjoin(pc.parent_entity_id)
