@@ -5,7 +5,7 @@ import unicodedata
 import os.path
 import csv
 
-STRING_ENCODING = 'utf_8_sig'
+STRING_ENCODING = 'cp437'
 
 
 def find_key_val_idx_in_list(lst, key, value):
@@ -37,7 +37,7 @@ def create_os_details_dict(os_file: str, comp_file: str, os_filter_file: str=Non
     os_field_names = ['ORDER_SENTENCE_ID', 'OE_FIELD_DISPLAY_VALUE',
                       'ORDER_ENTRY_FIELD']
 
-    with open(os_file, 'r') as f:
+    with open(os_file, 'r', encoding=STRING_ENCODING) as f:
         reader = csv.DictReader(f, fieldnames=os_field_names)
         next(reader)
         for row in reader:
@@ -55,7 +55,7 @@ def create_os_details_dict(os_file: str, comp_file: str, os_filter_file: str=Non
             details_dict[order_sent_id][oe_field] = oe_field_display_value
     
 
-    with open(comp_file, 'r') as f:
+    with open(comp_file, 'r', encoding=STRING_ENCODING) as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row['ORDER_SENTENCE_ID']:
@@ -71,12 +71,12 @@ def create_os_details_dict(os_file: str, comp_file: str, os_filter_file: str=Non
 
 
     if os_filter_file is not None:
-        with open(os_filter_file, 'r') as f:
+        with open(os_filter_file, 'r', encoding=STRING_ENCODING) as f:
             reader = csv.DictReader(f)
             row = next(reader)
             os_filter_columns = list(row.keys())
         
-        with open(os_filter_file, 'r') as f:
+        with open(os_filter_file, 'r', encoding=STRING_ENCODING) as f:
             reader = csv.DictReader(f, fieldnames=os_filter_columns)
             next(reader)
             for row in reader:
@@ -106,16 +106,16 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str, os_filter_fil
     details_dict = create_os_details_dict(os_file=order_sentence_file,
                                           comp_file=order_comment_file,
                                           os_filter_file=os_filter_file)
-    with open(order_comment_file, "r") as f:
+    with open(order_comment_file, "r", encoding=STRING_ENCODING) as f:
         reader = csv.DictReader(f)
         row = next(reader)
         field_names = list(row.keys())
     
 
-    with open(order_comment_file, 'r') as f:
+    with open(order_comment_file, 'r', encoding=STRING_ENCODING, newline="") as f:
         reader = csv.DictReader(f, fieldnames=field_names)
         next(reader)
-        for row in reader:
+        for idx, row in enumerate(reader):
             powerplan = row['POWERPLAN_DESCRIPTION']
 
             if not powerplan:
@@ -132,7 +132,7 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str, os_filter_fil
             bgcolor_blue = row['BGCOLOR_BLUE']
             synonym = row['COMPONENT']
             iv_synonym = row.get("IV_COMPONENT")
-            orderable_type_flag = int(row.get("ORDERABLE_TYPE_FLAG"))
+            orderable_type_flag = int(float(row.get("ORDERABLE_TYPE_FLAG")))
             target_duration = row['TARGET_DURATION']
             start_offset = row['START_OFFSET']
             link_duration_to_phase = row['LINK_DURATION_TO_PHASE']
@@ -152,7 +152,7 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str, os_filter_fil
             else:
                 order_sentence_id = 0
             if row['ORDER_SENTENCE_SEQ'] is not None and row['ORDER_SENTENCE_SEQ']:
-                sent_seq = int(row['ORDER_SENTENCE_SEQ'].strip())
+                sent_seq = int(float(row['ORDER_SENTENCE_SEQ'].strip()))
             else:
                 sent_seq = 0
 
@@ -259,9 +259,10 @@ if __name__ == "__main__":
     """
     script_path = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(script_path, 'data')
-    order_sentence_path = os.path.join(data_path, 'os_detail_p0783.csv')
-    component_path = os.path.join(data_path, 'ONCP_comp_p0783.csv')
-    order_sentence_filter_path = os.path.join(data_path, 'os_filter_p0783.csv')
+    order_sentence_path = os.path.join(data_path, 'os_detail_b0783.csv')
+    component_path = os.path.join(data_path, 'ONCP_comp_b0783.csv')
+    order_sentence_filter_path = os.path.join(data_path, 'os_filter_b0783.csv')
     a = csv_to_json(order_sentence_file=order_sentence_path,
                     order_comment_file=component_path,
                     os_filter_file=order_sentence_filter_path)
+    print("")

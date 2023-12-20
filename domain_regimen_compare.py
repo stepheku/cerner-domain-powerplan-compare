@@ -5,7 +5,8 @@ import csv
 import lcs
 
 # this is only needed 
-STRING_ENCODING = "utf_8_sig"
+# STRING_ENCODING = "utf_8_sig"
+STRING_ENCODING = "cp1252"
 
 REGIMEN_COMP_FIELD_NAMES = [
     "POWERPLAN_BASE_NAME", "REGIMEN_DETAIL_SEQUENCE", "COMPONENT",
@@ -27,7 +28,7 @@ def csv_to_json(file_path: Path) -> dict:
 
     output = {}
 
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding=STRING_ENCODING) as f:
         columns = get_columns_from_csv(file_path)
         reader = csv.DictReader(f, fieldnames=columns)
         next(reader, None)

@@ -118,17 +118,6 @@ def main():
                             phase_name=phase_desc,
                         )
                     )
-                elif b0783_phase_dict and p0783_phase_dict is None:
-                    output.append(
-                        {
-                            "plan": plan_desc,
-                            "phase": phase_desc,
-                            "key": f"Phase is missing: {phase_desc}",
-                            "value1": "Exists",
-                            "value2": "Does not exist",
-                        }
-                    )
-
                     # DOTs exist (phases must exist)
                     if b0783_phase_dict.get("dots"):
                         for dot_desc, dot_dict in b0783_phase_dict.get("dots", {}).items():
@@ -154,6 +143,17 @@ def main():
                                         "value2": "Does not exist",
                                     }
                                 )
+                elif b0783_phase_dict and p0783_phase_dict is None:
+                    output.append(
+                        {
+                            "plan": plan_desc,
+                            "phase": phase_desc,
+                            "key": f"Phase is missing: {phase_desc}",
+                            "value1": "Exists",
+                            "value2": "Does not exist",
+                        }
+                    )
+
 
     with open("output_pathway_compare.csv", "w", encoding=STRING_ENCODING, newline="") as f:
         writer = csv.DictWriter(

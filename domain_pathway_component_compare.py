@@ -101,7 +101,7 @@ def append_to_output_csv(s: dict):
         val_1
         val_2
     """
-    with open('output.csv', 'a', newline='\n') as f:
+    with open('output.csv', 'a', newline='\n', encoding=STRING_ENCODING) as f:
         headers = ['PowerPlan', 'Phase', 'synonym', 'key', 'val_1', 'val_2']
         writer = csv.DictWriter(f, fieldnames=headers, quoting=csv.QUOTE_ALL)
         writer.writerow(s)
