@@ -97,27 +97,27 @@ def create_os_details_dict(os_file: str, comp_file: str, os_filter_file: str=Non
     return details_dict
 
 
-def csv_to_json(order_sentence_file: str, order_comment_file: str, os_filter_file: str=None) -> dict:
+def csv_to_json(order_sentence_file: str, components_file: str, os_filter_file: str=None) -> dict:
     """
     Conversion of CSV to dictionary/JSON for sequenced PowerPlans and clinical
     category
 
     :param order_sentence_file:
-    :param order_comment_file:
+    :param components_file:
 
     :return:
     """
     output_dict = collections.defaultdict()
     details_dict = create_os_details_dict(os_file=order_sentence_file,
-                                          comp_file=order_comment_file,
+                                          comp_file=components_file,
                                           os_filter_file=os_filter_file)
-    with open(order_comment_file, "r", encoding=STRING_ENCODING) as f:
+    with open(components_file, "r", encoding=STRING_ENCODING) as f:
         reader = csv.DictReader(f)
         row = next(reader)
         field_names = list(row.keys())
     
 
-    with open(order_comment_file, 'r', encoding=STRING_ENCODING, newline="") as f:
+    with open(components_file, 'r', encoding=STRING_ENCODING, newline="") as f:
         reader = csv.DictReader(f, fieldnames=field_names)
         next(reader)
         for idx, row in enumerate(reader):
@@ -233,9 +233,9 @@ def csv_to_json(order_sentence_file: str, order_comment_file: str, os_filter_fil
 
     # TODO: Refactor this to have a domain key and a powerplans key that
     # will hold the powerplans dictionary
-    if 'b0783' in order_comment_file.lower():
+    if 'b0783' in components_file.lower():
         domain = 'b0783'
-    elif 'p0783' in order_comment_file.lower():
+    elif 'p0783' in components_file.lower():
         domain = 'p0783'
 
     output = dict()
@@ -268,6 +268,6 @@ if __name__ == "__main__":
     component_path = os.path.join(data_path, 'ONCP_comp_b0783.csv')
     order_sentence_filter_path = os.path.join(data_path, 'os_filter_b0783.csv')
     a = csv_to_json(order_sentence_file=order_sentence_path,
-                    order_comment_file=component_path,
+                    components_file=component_path,
                     os_filter_file=order_sentence_filter_path)
     print("")
