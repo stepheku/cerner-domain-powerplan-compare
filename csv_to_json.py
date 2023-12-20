@@ -4,6 +4,8 @@ import collections
 import unicodedata
 import os.path
 import csv
+import pandas as pd
+from pathlib import Path
 
 STRING_ENCODING = 'cp437'
 
@@ -23,6 +25,18 @@ def find_key_val_idx_in_list(lst, key, value):
             return i
 
 
+def return_csv_or_xl_to_df(s: str, n: list=None) -> pd.DataFrame:
+    str_path = Path(s)
+    if "CSV" in str_path.suffix.upper():
+        df = pd.read_csv(str_path, encoding=STRING_ENCODING, header=0)
+    elif "XLSX" in str_path.suffix.upper():
+        df = pd.read_excel(str_path, dtype=d)
+
+    df.fillna("", inplace=True)
+
+    return df
+
+
 def create_os_details_dict(os_file: str, comp_file: str, os_filter_file: str=None) -> dict:
     """
     Creates order sentence details dictionary to be embedded in
@@ -37,57 +51,48 @@ def create_os_details_dict(os_file: str, comp_file: str, os_filter_file: str=Non
     os_field_names = ['ORDER_SENTENCE_ID', 'OE_FIELD_DISPLAY_VALUE',
                       'ORDER_ENTRY_FIELD']
 
-    with open(os_file, 'r', encoding=STRING_ENCODING) as f:
-        reader = csv.DictReader(f, fieldnames=os_field_names)
-        next(reader)
-        for row in reader:
-            if row['ORDER_SENTENCE_ID'] != '':
-                order_sent_id = int(float(row['ORDER_SENTENCE_ID']))
-                oe_field = row['ORDER_ENTRY_FIELD']
-                oe_field_display_value = row['OE_FIELD_DISPLAY_VALUE']
+    os_file_num_fields = ['ORDER_SENTENCE_ID']
+    reader = return_csv_or_xl_to_df(os_file, n=os_file_num_fields)
+    for _, row in reader.iterrows():
+        if row['ORDER_SENTENCE_ID'] != '':
+            order_sent_id = row['ORDER_SENTENCE_ID']
+            oe_field = row['ORDER_ENTRY_FIELD']
+            oe_field_display_value = row['OE_FIELD_DISPLAY_VALUE']
 
-            else:
-                continue
+        else:
+            continue
 
-            if order_sent_id not in details_dict.keys():
-                details_dict[order_sent_id] = {}
+        if order_sent_id not in details_dict.keys():
+            details_dict[order_sent_id] = {}
 
-            details_dict[order_sent_id][oe_field] = oe_field_display_value
+        details_dict[order_sent_id][oe_field] = oe_field_display_value
     
 
-    with open(comp_file, 'r', encoding=STRING_ENCODING) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row['ORDER_SENTENCE_ID']:
-                order_sentence_id = int(float(row['ORDER_SENTENCE_ID']))
-            else:
-                order_sentence_id = 0
-            if row['ORDER_COMMENT']:
-                order_comment = row['ORDER_COMMENT']
-            else:
-                order_comment = ''
-            if order_sentence_id in details_dict:
-                details_dict[order_sentence_id]['order_comments'] = order_comment
+    reader = return_csv_or_xl_to_df(comp_file)
+    for _, row in reader.iterrows():
+        if row['ORDER_SENTENCE_ID']:
+            order_sentence_id = int(float(row['ORDER_SENTENCE_ID']))
+        else:
+            order_sentence_id = 0
+        if row['ORDER_COMMENT']:
+            order_comment = row['ORDER_COMMENT']
+        else:
+            order_comment = ''
+        if order_sentence_id in details_dict:
+            details_dict[order_sentence_id]['order_comments'] = order_comment
 
 
     if os_filter_file is not None:
-        with open(os_filter_file, 'r', encoding=STRING_ENCODING) as f:
-            reader = csv.DictReader(f)
-            row = next(reader)
-            os_filter_columns = list(row.keys())
-        
-        with open(os_filter_file, 'r', encoding=STRING_ENCODING) as f:
-            reader = csv.DictReader(f, fieldnames=os_filter_columns)
-            next(reader)
-            for row in reader:
-                order_sent_id = int(float(row['ORDER_SENTENCE_ID']))
-                if order_sent_id not in details_dict:
-                    continue
-                for k, v in row.items():
-                    if k.endswith("VALUE") and float(v) > 0:
-                        details_dict[order_sent_id][k] = str(float(v.strip()))
-                    elif k.endswith("DISPLAY") and v:
-                        details_dict[order_sent_id][k] = v
+        reader = return_csv_or_xl_to_df(os_filter_file)
+        for _, row in reader.iterrows():
+            order_sent_id = int(float(row['ORDER_SENTENCE_ID']))
+            if order_sent_id not in details_dict:
+                continue
+            for k, v in row.items():
+                if k.endswith("VALUE") and float(v) > 0:
+                    details_dict[order_sent_id][k] = str(float(v.strip()))
+                elif k.endswith("DISPLAY") and v:
+                    details_dict[order_sent_id][k] = v
 
     return details_dict
 
