@@ -4,7 +4,8 @@ order_sentence_details.prg
 Grabs all discrete order sentence details based on the pathway_catalog table
 Save to data/os_detail_b0783.csv or data/os_detail_p0783.csv
 */
-select os.order_sentence_id
+select domain = curdomain
+    , os.order_sentence_id
     , oe_field_display_value = 
         if (osd.default_parent_entity_name = "CODE_VALUE") 
             uar_get_code_display(osd.default_parent_entity_id)
@@ -21,7 +22,7 @@ from order_sentence os
     , pw_cat_reltn pcr
 plan pwcat where pwcat.active_ind = 1
     and pwcat.type_mean in ("CAREPLAN", "PATHWAY")
-    and pwcat.description_key like "ONCP*"
+    ; and pwcat.description_key like "ONCP*"
     and pwcat.version = (
         select max(pwcat4.version)
         from pathway_catalog pwcat4
@@ -29,11 +30,11 @@ plan pwcat where pwcat.active_ind = 1
             and pwcat4.active_ind = 1
     )
     and pwcat.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-    and pwcat.pathway_type_cd in (
-        value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
-        , value(uar_get_code_by("DISPLAY_KEY", 30183, "COMPASSIONATEACCESSPROGRAM"))
-        , value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGYMULTIDISCIPLINARY"))
-    )
+    ; and pwcat.pathway_type_cd in (
+    ;     value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
+    ;     , value(uar_get_code_by("DISPLAY_KEY", 30183, "COMPASSIONATEACCESSPROGRAM"))
+    ;     , value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGYMULTIDISCIPLINARY"))
+    ; )
 join pcr where pcr.pw_cat_s_id = outerjoin(pwcat.pathway_catalog_id)
     and pcr.type_mean = outerjoin("GROUP")
 join pwcat2 where pwcat2.pathway_catalog_id = outerjoin(pcr.pw_cat_t_id)

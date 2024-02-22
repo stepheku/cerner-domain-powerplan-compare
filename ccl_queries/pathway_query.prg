@@ -29,8 +29,8 @@ select
     , beg_cycle_nbr = pwcat.cycle_begin_nbr
     , end_cycle_nbr = pwcat.cycle_end_nbr
     , cycle_incrm_nbr = pwcat.cycle_increment_nbr
-    , disp_std_nbr_or_end_val = pwcat.cycle_display_end_ind
-    , restr_ability_to_mod_std_nbr = pwcat.cycle_lock_end_ind
+    , disp_std_nbr_or_end_val_ind = pwcat.cycle_display_end_ind
+    , restr_ability_to_mod_std_nbr_ind = pwcat.cycle_lock_end_ind
     , cycle_disp_val = uar_get_code_display(pwcat.cycle_label_cd)
     , default_view_mean = pwcat.default_view_mean
     , prompt_for_ordering_physician_ind = pwcat.provider_prompt_ind
@@ -73,7 +73,7 @@ select
         pwcat2.alerts_on_plan_upd_ind
     , phase_route_for_review = 
         if(pwcat2.route_for_review_ind = 1)
-            if(pwcat2.review_required_sig_count = 1) "Route for 1 review"
+            if(pwcat2.review_required_sig_count in (0, 1)) "Route for 1 review"
             elseif(pwcat2.review_required_sig_count = 2) "Route for 2 reviews"
             else "None"
             endif
@@ -103,11 +103,14 @@ from pathway_catalog pwcat
     , pathway_catalog pwcat3
 plan pwcat where pwcat.active_ind = 1
     and pwcat.type_mean in ("CAREPLAN", "PATHWAY")
-    and pwcat.description_key like 'PED*'
     and pwcat.end_effective_dt_tm > sysdate
-    and pwcat.beg_effective_dt_tm < sysdate
+    and pwcat.version = (
+        select max(pwcat4.version)
+        from pathway_catalog pwcat4
+        where pwcat4.version_pw_cat_id = pwcat.version_pw_cat_id
+            and pwcat4.active_ind = 1
+    )
     and pwcat.ref_owner_person_id = 0
-    and pwcat.pathway_type_cd = value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
 join per where per.pathway_catalog_id = outerjoin(pwcat.pathway_catalog_id)
     and per.type_mean != outerjoin("EVENTSET")
 join pcr where pcr.pw_cat_s_id = outerjoin(pwcat.pathway_catalog_id)

@@ -5,8 +5,11 @@ Grabs PowerPlan components based on the parameters specified on the pathway_cata
 table
 This is saved to: ONCP_comp_b0783.csv or ONCP_comp_p0783.csv
 */
-select powerplan_description = pwcat.description
+select domain = curdomain
+    , powerplan_description = pwcat.description
+    , pwcat.pathway_catalog_id
     , phase = pwcat2.description
+    , phase_pathway_catalog_id = pwcat2.pathway_catalog_id
     , plan_display_method = uar_get_code_display(pwcat.display_method_cd)
     , phase_display_method = uar_get_code_display(pwcat2.display_method_cd)
     , pc.sequence
@@ -30,6 +33,7 @@ select powerplan_description = pwcat.description
             findstring('<BackColor>', pc.display_format_xml) + textlen('<BackColor>') + 2, 2,
             pc.display_format_xml),
             2 ) endif
+    , synonym_type = uar_get_code_display(ocs.mnemonic_type_cd)
     , component = if(pc.parent_entity_name = 'ORDER_CATALOG_SYNONYM')ocs.mnemonic
         elseif(pc.parent_entity_name = 'OUTCOME_CATALOG') oc.description
         elseif(pc.parent_entity_name = 'LONG_TEXT') substring(0, 1000, lt2.long_text)
@@ -97,7 +101,6 @@ from pathway_catalog pwcat
 
 plan pwcat where pwcat.active_ind = 1
     and pwcat.type_mean in ("CAREPLAN", "PATHWAY")
-    and pwcat.description_key like "ONCP*"
     and pwcat.version = (
         select max(pwcat4.version)
         from pathway_catalog pwcat4
@@ -105,11 +108,11 @@ plan pwcat where pwcat.active_ind = 1
             and pwcat4.active_ind = 1
     )
     and pwcat.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-    and pwcat.pathway_type_cd in (
-        value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
-        , value(uar_get_code_by("DISPLAY_KEY", 30183, "COMPASSIONATEACCESSPROGRAM"))
-        , value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGYMULTIDISCIPLINARY"))
-    )
+    ; and pwcat.pathway_type_cd in (
+    ;     value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGY"))
+    ;     , value(uar_get_code_by("DISPLAY_KEY", 30183, "COMPASSIONATEACCESSPROGRAM"))
+    ;     , value(uar_get_code_by("DISPLAY_KEY", 30183, "ONCOLOGYMULTIDISCIPLINARY"))
+    ; )
 join pcr where pcr.pw_cat_s_id = outerjoin(pwcat.pathway_catalog_id)
     and pcr.type_mean = outerjoin("GROUP")
 join pwcat2 where pwcat2.pathway_catalog_id = outerjoin(pcr.pw_cat_t_id)
