@@ -1,8 +1,9 @@
 # Excel spreadsheets or CSVs
 *.xls*
 *.csv
-!*data/*.csv
+*data/*.csv
 *.txt
+*.json
 
 # vs-code
 .vscode/

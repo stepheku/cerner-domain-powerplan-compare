@@ -1,0 +1,7 @@
+MISSING_POWERPLAN = "PowerPlan missing between domains"
+PHASE_MISMATCH_OR_MISSING = "Phase name mismatch or missing between domains. Cannot check contents of this phase"
+CLIN_CAT_MISMATCH_OR_MISSING = "Clinical category mismatch or missing between domains. Cannot check contents of this clinical category"
+COMPONENT_MISMATCH_OR_MISSING = "Component mismatch or missing between domains"
+COMPONENT_ATTR_DIFF = "Component attribute difference"
+MISSING_ORD_SENT = "Missing order sentence between domains"
+ORD_SENT_DETAIL_DIFF = "Order sentence detail difference"
