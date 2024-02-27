@@ -347,6 +347,7 @@ def main(comp_dict_1: dict, comp_dict_2: dict):
                                             "Additional_Comments": constants.MISSING_ORD_SENT,
                                         }
                                     )
+                                    continue
 
                             for key, domain_1_val in domain_1_os.get(
                                 "order_sentence_details"
@@ -363,7 +364,7 @@ def main(comp_dict_1: dict, comp_dict_2: dict):
                                         domain_2_val = (
                                             domain_2_order_sentences[idx]
                                             .get("order_sentence_details", {})
-                                            .get(key)
+                                            .get(key, "")
                                         )
 
                                     if isinstance(domain_1_val, str) and isinstance(
@@ -449,6 +450,7 @@ def main(comp_dict_1: dict, comp_dict_2: dict):
                                             "Additional_Comments": constants.MISSING_ORD_SENT,
                                         }
                                     )
+                                    continue
 
                             for key, domain_2_val in domain_2_os.get(
                                 "order_sentence_details"
@@ -876,6 +878,7 @@ def main(comp_dict_1: dict, comp_dict_2: dict):
                                             "Additional_Comments": constants.MISSING_ORD_SENT,
                                         }
                                     )
+                                    continue
 
                             for key, domain_1_val in domain_1_os.get(
                                 "order_sentence_details"
@@ -978,6 +981,7 @@ def main(comp_dict_1: dict, comp_dict_2: dict):
                                             "Additional_Comments": constants.MISSING_ORD_SENT,
                                         }
                                     )
+                                    continue
 
                             for key, domain_2_val in domain_2_os.get(
                                 "order_sentence_details"
