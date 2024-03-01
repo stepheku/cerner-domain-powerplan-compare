@@ -653,53 +653,56 @@ def main(comp_dict_1: dict, comp_dict_2: dict):
         ).items():
             domain_2_phase_attr = domain_2_powerplan_attr.get("phases").get(phase_name)
 
-            combined_clin_cat_list = lcs.diff_wrapper(
-                list(domain_1_phase_attr.get("categories").keys()),
-                list(domain_2_phase_attr.get("categories").keys()),
-            )
+            # longest common substring will not work here because the clinical
+            # categories are not ordered (or they're not ordered based on
+            # users in dcptools)
+            diff_clin_cat_1 = [
+                x for x in domain_1_phase_attr.get("categories").keys() if
+                x not in domain_2_phase_attr.get("categories")
+            ]
 
-            if any(x.startswith(("+", "-")) for x in combined_clin_cat_list):
-                diff_clin_cat_1 = [x[2:] for x in combined_clin_cat_list if "+" in x[0]]
-                diff_clin_cat_2 = [x[2:] for x in combined_clin_cat_list if "-" in x[0]]
+            diff_clin_cat_2 = [
+                x for x in domain_2_phase_attr.get("categories").keys() if
+                x not in domain_1_phase_attr.get("categories")
+            ]
 
-                # Remove the differing clinical categories
-                [
-                    domain_1_phase_attr.get("categories").pop(x, None)
-                    for x in diff_clin_cat_1 + diff_clin_cat_2
-                ]
-                [
-                    domain_2_phase_attr.get("categories").pop(x, None)
-                    for x in diff_clin_cat_1 + diff_clin_cat_2
-                ]
+            [
+                domain_1_phase_attr.get("categories").pop(x, None)
+                for x in diff_clin_cat_1 + diff_clin_cat_2
+            ]
+            [
+                domain_2_phase_attr.get("categories").pop(x, None)
+                for x in diff_clin_cat_1 + diff_clin_cat_2
+            ]
 
-                for clin_cat in diff_clin_cat_1:
-                    output_list.append(
-                        {
-                            "PowerPlan": powerplan,
-                            "Phase": phase_name,
-                            "Clinical Category/Sub-Category": None,
-                            "Component": "",
-                            "Component Seq": None,
-                            "Key": "",
-                            domain_1: clin_cat,
-                            domain_2: "",
-                            "Additional_Comments": constants.CLIN_CAT_MISMATCH_OR_MISSING,
-                        }
-                    )
-                for clin_cat in diff_clin_cat_2:
-                    output_list.append(
-                        {
-                            "PowerPlan": powerplan,
-                            "Phase": phase_name,
-                            "Clinical Category/Sub-Category": None,
-                            "Component": "",
-                            "Component Seq": None,
-                            "Key": "",
-                            domain_1: "",
-                            domain_2: clin_cat,
-                            "Additional_Comments": constants.CLIN_CAT_MISMATCH_OR_MISSING,
-                        }
-                    )
+            for clin_cat in diff_clin_cat_1:
+                output_list.append(
+                    {
+                        "PowerPlan": powerplan,
+                        "Phase": phase_name,
+                        "Clinical Category/Sub-Category": None,
+                        "Component": "",
+                        "Component Seq": None,
+                        "Key": "",
+                        domain_1: clin_cat,
+                        domain_2: "",
+                        "Additional_Comments": constants.CLIN_CAT_MISMATCH_OR_MISSING,
+                    }
+                )
+            for clin_cat in diff_clin_cat_2:
+                output_list.append(
+                    {
+                        "PowerPlan": powerplan,
+                        "Phase": phase_name,
+                        "Clinical Category/Sub-Category": None,
+                        "Component": "",
+                        "Component Seq": None,
+                        "Key": "",
+                        domain_1: "",
+                        domain_2: clin_cat,
+                        "Additional_Comments": constants.CLIN_CAT_MISMATCH_OR_MISSING,
+                    }
+                )
 
             for clin_cat in domain_1_phase_attr.get("categories").keys():
                 domain_2_phase_attr = domain_2_powerplan_attr.get("phases").get(phase_name)
