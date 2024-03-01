@@ -306,7 +306,7 @@ def create_components_dict(
         import json
 
         with open(output_file_path, "w") as f:
-            json.dump(c, f)
+            json.dump(output_comp_dict, f)
 
     return output_comp_dict
 
@@ -374,6 +374,7 @@ if __name__ == "__main__":
     c = create_components_dict(
         comp_file_path=PLAN_COMPONENTS_PATH,
         os_detail_file_path=OS_DETAIL_PATH,
+        output_file_path=args.output_file
     )
 
     p = create_pathways_dict(
