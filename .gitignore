@@ -2,7 +2,6 @@
 *.xls*
 *.csv
 *data/*.csv
-*.txt
 *.json
 
 # vs-code
