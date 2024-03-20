@@ -1,5 +1,4 @@
-import pandas as pd
-import json
+import csv
 from pathlib import Path
 from utils import find_component_idx_in_list
 from utils import find_component_seq_in_list
@@ -1064,8 +1063,14 @@ def main(comp_dict_1: dict, comp_dict_2: dict):
 
 
     # Spit out the final spreadsheet
-    pd.DataFrame().from_records(output_list).to_excel("output.xlsx", index=False)
-
+    if output_list:
+        with open("output.csv", "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=output_list[0].keys())
+            writer.writeheader()
+            for row in output_list:
+                writer.writerow(row)
+    else:
+        print("No changes found")
 
 if __name__ == "__main__":
     args = parse_args()
